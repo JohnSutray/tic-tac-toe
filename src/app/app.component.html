@@ -103,14 +103,16 @@
     </ng-container>
   </mat-toolbar>
 
-  <div class="tik-toe-row"
-       [class.blocked]="blocked"
-       *ngFor="let row of game.moves; index as rowIndex">
-    <div class="tik-toe-cell"
-         (click)="!blocked && move(rowIndex, cellIndex)"
-         *ngFor="let cell of row; index as cellIndex">
-      <div class="tik-toe-cell-value">
-        {{cell}}
+  <div class="tik-toe flex-center">
+    <div class="tik-toe-row"
+         [class.blocked]="blocked"
+         *ngFor="let row of game.moves; index as rowIndex">
+      <div class="tik-toe-cell"
+           (click)="!blocked && move(rowIndex, cellIndex)"
+           *ngFor="let cell of row; index as cellIndex">
+        <div class="tik-toe-cell-value">
+          {{cell}}
+        </div>
       </div>
     </div>
   </div>

@@ -13,7 +13,7 @@ const {
   SERVER_EVENTS,
   ERRORS,
 } = require('./src/events.js');
-app.use(express.static(path.join(__dirname, './dist')))
+app.use(express.static(path.join(__dirname, './dist/tic-tac-toe')))
   .get('/*', (req, res) => res.sendFile('index.html', { root: './dist/tic-tac-toe' }));
 
 const rooms = [];
@@ -139,7 +139,7 @@ function selectOneFromPair(first, second) {
 }
 
 function isWinner(moves, value) {
-  return moves.some(row => isRowFull(row))
+  return moves.some(row => isRowFull(row, value))
     || moves.some((row, index) => isColumnFull(moves, index, value))
     || isDiagonalFull(moves, value)
     || isReversedDiagonalFull(moves, value);

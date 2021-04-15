@@ -1,3 +1,8 @@
+:host {
+  max-width: 1000px;
+  display: block;
+}
+
 .host-chips {
   width: 95%;
   margin-top: 15px;
@@ -13,6 +18,10 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.tik-toe {
+  margin-top: 20px;
 }
 
 .tik-toe-cell {
