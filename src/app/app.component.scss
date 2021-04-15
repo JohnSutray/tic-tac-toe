@@ -1,0 +1,66 @@
+.host-chips {
+  width: 95%;
+  margin-top: 15px;
+}
+
+.host-button {
+  width: 300px;
+  margin-top: 10px;
+}
+
+.flex-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.tik-toe-cell {
+  width: 100px;
+  height: 100px;
+  margin: 5px;
+  border: black solid 1px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.tik-toe-row {
+  display: flex;
+  flex-direction: row;
+
+  &.blocked {
+    cursor: not-allowed;
+  }
+}
+
+.nickname-field-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.nickname-field {
+  width: 95%;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.join-option {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.tik-toe-cell-value {
+  height: 160px;
+  font-size: 115px;
+}

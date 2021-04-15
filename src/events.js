@@ -4,10 +4,15 @@ module.exports = {
     STOP_HOST: 'stop host',
     JOIN_GAME: 'join game',
     MOVE: 'move',
+    DISCONNECT: 'disconnect',
   },
   SERVER_EVENTS: {
-    ANOTHER_JOINED: 'another joined',
     WIN: 'win',
     UPDATE_HOSTS: 'update hosts',
+    GAME_UPDATE: 'game update',
+  },
+  ERRORS: {
+    INVALID_USERNAME: 'invalid username',
+    CONNECT_ERROR: 'connect_error',
   },
 };

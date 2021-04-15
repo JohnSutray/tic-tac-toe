@@ -10,21 +10,24 @@ const io = require('socket.io')(server, {
 const port = process.env.PORT || 3000;
 const {
   CLIENT_EVENTS,
-  SERVER_EVENTS
+  SERVER_EVENTS,
+  ERRORS,
 } = require('../src/events.js');
 
 app.use(express.static(path.join(__dirname, 'dist')));
-server.listen(port, () => console.log(`Listening on ${port}`));
 
 const rooms = [];
 
 const getRooms = () => ({
-  rooms: rooms.map(room => ({ hostName: room.socket.username, tags })),
+  hosts: rooms.map(room => ({ hostName: room.socket.username, tags: room.tags })),
 });
 
 const removeRoom = (username) => {
   const indexOfRoom = rooms.findIndex(room => room.socket.username === username);
-  rooms.splice(indexOfRoom, 1);
+
+  if (indexOfRoom !== -1) {
+    rooms.splice(indexOfRoom, 1);
+  }
 };
 
 const addRoom = (socket, tags ) => rooms.push({ socket, tags });
@@ -32,75 +35,104 @@ const addRoom = (socket, tags ) => rooms.push({ socket, tags });
 const findRoom = (hostName) => rooms.find(host => host.socket.username === hostName);
 
 const createGame = (hostName, username) => ({
-  moves: [[], [], []],
-  firstPlayer: hostName,
-  secondPlayer: username,
+  moves: [
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+  ],
+  hostPlayer: hostName,
+  joinedPlayer: username,
 });
 
-const getTags = () => {
-  const set = new Set();
+const usernames = [];
 
-  rooms.map(room => room.tags).forEach(
-    tags => tags.forEach(
-      tag => set.add(tag),
-    ),
-  );
+const emitHostedGames = () => io.sockets.emit(SERVER_EVENTS.UPDATE_HOSTS, getRooms());
+const emitHostedGamesLocally = socket => socket.emit(SERVER_EVENTS.UPDATE_HOSTS, getRooms());
 
-  return Array.from(set);
-};
+io.use((socket, next) => {
+  const username = socket.handshake.auth.username;
+  if (!username || usernames.includes(username)) {
+    return next(new Error(ERRORS.INVALID_USERNAME));
+  }
+  socket.username = username;
+  next();
+});
 
 io.on('connection', socket => {
-  const username = socket.handshake.auth.username;
+  const username = socket.username;
+  usernames.push(username);
+  emitHostedGamesLocally(socket);
 
-  if (!username) {
-    return next(new Error('invalid username'));
-  }
-
-  socket.username = username;
-
-  socket.on(CLIENT_EVENTS.HOST_GAME, (tags) => {
+  socket.on(CLIENT_EVENTS.HOST_GAME, ({ tags }) => {
     addRoom(socket, tags);
-    socket.broadcast.emit(SERVER_EVENTS.UPDATE_HOSTS, getRooms());
+    emitHostedGames();
   });
 
   socket.on(CLIENT_EVENTS.STOP_HOST, () => {
     removeRoom(username);
-    socket.broadcast.emit(SERVER_EVENTS.UPDATE_HOSTS, getRooms());
+    emitHostedGames();
   });
 
-  socket.on(CLIENT_EVENTS.JOIN_GAME, (hostName) => {
+  socket.on(CLIENT_EVENTS.JOIN_GAME, ({ hostName }) => {
     const room = findRoom(hostName);
     const game = createGame(hostName, username);
     removeRoom(hostName);
+    emitHostedGames();
 
-    room.socket.emit(SERVER_EVENTS.ANOTHER_JOINED, { username, game });
-    onGameReady(room);
+    startGame(socket, room.socket, game);
+  });
+
+  socket.on('disconnect', () => {
+    usernames.splice(usernames.indexOf(username), 1);
+    removeRoom(username);
   });
 });
 
-const onGameReady = (socket, otherSocket, game) => {
-  socket.on(CLIENT_EVENTS.MOVE, (move) => {
-    game.moves[move.x][move.y] = move.value;
+const startGame = (joinedSocket, hostSocket, game) => {
+  const sendGameUpdate = (blockedUser) => {
+    const gameWithBlockedUser = {...game, blockedUser };
+    joinedSocket.emit(SERVER_EVENTS.GAME_UPDATE, gameWithBlockedUser);
+    hostSocket.emit(SERVER_EVENTS.GAME_UPDATE, gameWithBlockedUser);
+  };
+  const stopGame = () => {
+    joinedSocket.removeAllListeners(CLIENT_EVENTS.MOVE);
+    hostSocket.removeAllListeners(CLIENT_EVENTS.MOVE);
+  };
+  const performMove = (move, blockedUser) => {
+    game.moves[move.y][move.x] = move.value;
+    game.lastWentPerform = joinedSocket.username;
     const winner = findWinner(game);
 
+    sendGameUpdate(blockedUser);
+
     if (winner) {
-      socket.emit(SERVER_EVENTS.WIN, { winner });
-      otherSocket.emit(SERVER_EVENTS.WIN, { winner });
+      joinedSocket.emit(SERVER_EVENTS.WIN, { winner });
+      hostSocket.emit(SERVER_EVENTS.WIN, { winner });
+      stopGame();
     }
-  });
+  };
+
+  hostSocket.on(CLIENT_EVENTS.MOVE, move => performMove(move, hostSocket.username));
+  joinedSocket.on(CLIENT_EVENTS.MOVE, move => performMove(move, joinedSocket.username));
+
+  hostSocket.on(CLIENT_EVENTS.DISCONNECT, stopGame);
+  joinedSocket.on(CLIENT_EVENTS.DISCONNECT, stopGame);
+
+  const initiallyBlockedUser = selectOneFromPair(hostSocket.username, joinedSocket.username);
+  sendGameUpdate(initiallyBlockedUser);
 };
 
-const findWinner = game => {
+function findWinner(game) {
   if (isWinner(game.moves, 'x')) {
-    return game.firstPlayer;
+    return game.hostPlayer;
   }
 
   if (isWinner(game.moves, 'o')) {
-    return game.secondPlayer;
+    return game.joinedPlayer;
   }
 
   return null;
-};
+}
 
 function selectOneFromPair(first, second) {
   return Math.random() > 0.5 ? first : second;
@@ -144,3 +176,5 @@ function isReversedDiagonalFull(rows, value) {
 
   return true;
 }
+
+server.listen(port, () => console.log(`Listening on ${port}`));

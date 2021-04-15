@@ -1,14 +1,117 @@
-<mat-toolbar>
-  TIC-TAC-TOE
+<mat-toolbar class="toolbar">
+  <div>TIC-TAC-TOE</div>
+  <div *ngIf="socket.connected">
+    Signed as {{nameControl.value}}
+  </div>
 </mat-toolbar>
 
-<mat-form-field appearance="standard">
-  <mat-label>Choose nickname</mat-label>
-  <input [formControl]="nameControl"
-         matInput
-         placeholder="Choose nickname">
-  <mat-icon (click)="connect()" matSuffix>send</mat-icon>
-  <mat-error *ngIf="nameControl.errors?.alreadyUsed">
-    Name already used
-  </mat-error>
-</mat-form-field>
+<ng-container *ngIf="!socket.connected">
+  <mat-toolbar>
+    Select nickname
+  </mat-toolbar>
+  <div class="nickname-field-container">
+    <mat-form-field class="nickname-field"
+                    appearance="standard">
+      <mat-label>Choose nickname</mat-label>
+      <input [formControl]="nameControl"
+             autocomplete="off"
+             matInput
+             placeholder="Choose nickname">
+      <mat-error *ngIf="nameControl.errors?.alreadyUsed">
+        Name already used
+      </mat-error>
+    </mat-form-field>
+
+    <button class="host-button"
+            color="accent"
+            mat-stroked-button
+            (click)="connect()">
+      SIGN IN
+    </button>
+  </div>
+</ng-container>
+
+<mat-tab-group *ngIf="socket.connected && !game"
+               mat-stretch-tabs>
+  <mat-tab label="Join">
+    <mat-toolbar>
+      Select game to join
+    </mat-toolbar>
+
+    <mat-toolbar *ngIf="!hosts.length">
+      No available games
+    </mat-toolbar>
+
+    <mat-list>
+      <mat-list-item *ngFor="let host of hosts; trackBy: trackByHostname">
+        <div class="join-option">
+          <div class="flex-center">
+            {{host.hostName}}
+          </div>
+          <button (click)="joinGame(host.hostName)"
+                  mat-icon-button>
+            <mat-icon>
+              not_started
+            </mat-icon>
+          </button>
+        </div>
+      </mat-list-item>
+    </mat-list>
+  </mat-tab>
+
+  <mat-tab label="Host">
+    <div class="flex-center">
+      <mat-form-field class="host-chips">
+        <mat-label>
+          add tags and users could find your game
+        </mat-label>
+        <mat-chip-list [disabled]="isHosted"
+                       #chipList
+                       aria-label="Fruit selection">
+          <mat-chip *ngFor="let tag of hostTags; trackBy: trackByContent"
+                    [selectable]="false"
+                    [removable]="true"
+                    (removed)="removeHostTag(tag)">
+            {{tag}}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip>
+          <input placeholder="Input tag and tap enter"
+                 [matChipInputFor]="chipList"
+                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 [matChipInputAddOnBlur]="true"
+                 (matChipInputTokenEnd)="addHostTag($event)">
+        </mat-chip-list>
+      </mat-form-field>
+
+      <button class="host-button"
+              mat-stroked-button
+              (click)="isHosted ? stopHostGame() : hostGame()">
+        {{isHosted ? 'STOP HOST' : 'START HOST'}}
+      </button>
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+<ng-container *ngIf="game">
+  <mat-toolbar>
+    <ng-container *ngIf="blocked">
+      Awaiting {{otherName}} move
+    </ng-container>
+
+    <ng-container *ngIf="!blocked">
+      Your turn
+    </ng-container>
+  </mat-toolbar>
+
+  <div class="tik-toe-row"
+       [class.blocked]="blocked"
+       *ngFor="let row of game.moves; index as rowIndex">
+    <div class="tik-toe-cell"
+         (click)="!blocked && move(rowIndex, cellIndex)"
+         *ngFor="let cell of row; index as cellIndex">
+      <div class="tik-toe-cell-value">
+        {{cell}}
+      </div>
+    </div>
+  </div>
+</ng-container>
