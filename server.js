@@ -12,9 +12,9 @@ const {
   CLIENT_EVENTS,
   SERVER_EVENTS,
   ERRORS,
-} = require('../src/events.js');
-
-app.use(express.static(path.join(__dirname, 'dist')));
+} = require('./src/events.js');
+app.use(express.static(path.join(__dirname, './dist')))
+  .get('/*', (req, res) => res.sendFile('index.html', { root: './dist/tic-tac-toe' }));
 
 const rooms = [];
 
