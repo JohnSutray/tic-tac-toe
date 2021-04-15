@@ -7,6 +7,7 @@ import { MatChipInputEvent } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { EndGameComponent } from 'src/app/end-game/end-game.component';
 import { IIsWinner } from 'src/app/end-game/end-game.model';
+import { environment } from 'src/environments/environment';
 
 interface IGame {
   moves: ('x' | 'o')[][];
@@ -57,8 +58,7 @@ export class AppComponent implements OnInit {
   allTags: string[];
   isHosted: boolean;
 
-  readonly URL = 'http://localhost:3000';
-  readonly socket = io(this.URL, { autoConnect: false });
+  readonly socket = io(environment.SOCKET_URL, { autoConnect: false });
   readonly nameControl = new FormControl();
   readonly hostTags: string[] = [];
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
