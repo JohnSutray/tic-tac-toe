@@ -15,6 +15,7 @@ import { MatListModule } from '@angular/material/list';
 import { EndGameComponent } from './end-game/end-game.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 @NgModule({
   declarations: [
@@ -35,6 +36,7 @@ import { MatDividerModule } from '@angular/material/divider';
     MatListModule,
     MatDialogModule,
     MatDividerModule,
+    MatAutocompleteModule,
   ],
   bootstrap: [AppComponent]
 })

@@ -133,6 +133,10 @@ export class AppComponent implements OnInit {
     this.clientTags.splice(this.hostTags.indexOf(tag), 1);
   }
 
+  addClientTagByAutocomplete(tag: string):void {
+    this.clientTags.push(tag);
+  }
+
   addClientTag(event: MatChipInputEvent): void {
     const input = event.input;
     const value = event.value;

@@ -62,9 +62,17 @@
           <input placeholder="Input tag and tap enter"
                  [matChipInputFor]="clientListChips"
                  [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                 [matAutocomplete]="auto"
                  [matChipInputAddOnBlur]="true"
                  (matChipInputTokenEnd)="addClientTag($event)">
         </mat-chip-list>
+        <mat-autocomplete #auto="matAutocomplete"
+                          (optionSelected)="addClientTagByAutocomplete($event.option.value)">
+          <mat-option *ngFor="let tag of allTags"
+                      [value]="tag">
+            {{tag}}
+          </mat-option>
+        </mat-autocomplete>
       </mat-form-field>
     </div>
 
