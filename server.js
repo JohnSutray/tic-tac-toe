@@ -169,13 +169,13 @@ const startGame = (joinedSocket, hostSocket, game) => {
     game.moves[move.y][move.x] = move.value;
     game.lastWentPerform = joinedSocket.username;
     const winner = findWinner(game);
-    const isDraw = isDraw(game);
+    const draw = isDraw(game);
 
     sendGameUpdate(blockedUser);
 
-    if (winner || isDraw) {
-      joinedSocket.emit(SERVER_EVENTS.WIN, { winner, isDraw });
-      hostSocket.emit(SERVER_EVENTS.WIN, { winner, isDraw });
+    if (winner || draw) {
+      joinedSocket.emit(SERVER_EVENTS.WIN, { winner, isDraw: draw });
+      hostSocket.emit(SERVER_EVENTS.WIN, { winner, isDraw: draw });
       stopGame();
     }
   };
