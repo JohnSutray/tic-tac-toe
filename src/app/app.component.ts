@@ -27,6 +27,7 @@ interface IHostCollection {
 
 interface IEndGame {
   winner: string;
+  isDraw: boolean;
 }
 
 interface IHostGame {
@@ -61,6 +62,7 @@ export class AppComponent implements OnInit {
   readonly socket = io(environment.SOCKET_URL, { autoConnect: false });
   readonly nameControl = new FormControl();
   readonly hostTags: string[] = [];
+  readonly clientTags: string[] = [];
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
 
   constructor(
@@ -72,14 +74,28 @@ export class AppComponent implements OnInit {
     return { tags: this.hostTags };
   }
 
+  private get markValue(): string {
+    return this.game.hostPlayer === this.name
+      ? 'x'
+      : 'o';
+  }
+
+  get name(): string {
+    return this.nameControl.value;
+  }
+
   get blocked(): boolean {
-    return this.game.blockedUser === this.nameControl.value;
+    return this.game.blockedUser === this.name;
   }
 
   get otherName(): string {
-    return this.game.hostPlayer === this.nameControl.value
+    return this.game.hostPlayer === this.name
       ? this.game.joinedPlayer
       : this.game.hostPlayer;
+  }
+
+  get filteredHosts(): IHost[] {
+    return this.hosts.filter(host => this.clientTags.every(tag => host.tags.includes(tag)));
   }
 
   ngOnInit(): void {
@@ -92,7 +108,7 @@ export class AppComponent implements OnInit {
   }
 
   connect(): void {
-    this.socket.auth = { username: this.nameControl.value };
+    this.socket.auth = { username: this.name };
     this.socket.connect();
   }
 
@@ -106,6 +122,23 @@ export class AppComponent implements OnInit {
 
     if ((value || '').trim()) {
       this.hostTags.push(value.trim());
+    }
+
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  removeClientTag(tag: string): void {
+    this.clientTags.splice(this.hostTags.indexOf(tag), 1);
+  }
+
+  addClientTag(event: MatChipInputEvent): void {
+    const input = event.input;
+    const value = event.value;
+
+    if ((value || '').trim()) {
+      this.clientTags.push(value.trim());
     }
 
     if (input) {
@@ -136,6 +169,15 @@ export class AppComponent implements OnInit {
     return tag + index;
   }
 
+  move(rowIndex: number, cellIndex: number): void {
+    if (this.blocked || this.game.moves[rowIndex][cellIndex]) {
+      return;
+    }
+
+    const move: IMove = { x: cellIndex, y: rowIndex, value: this.markValue };
+    this.socket.emit(CLIENT_EVENTS.MOVE, move);
+  }
+
   private getAllTags(): string[] {
     const set = new Set<string>();
 
@@ -148,11 +190,13 @@ export class AppComponent implements OnInit {
     return Array.from(set);
   };
 
-  private endGame = (endGame: IEndGame): void => {
-    const isWinner: IIsWinner =  { isWinner: endGame.winner === this.nameControl.value };
-    this.dialogService.open(EndGameComponent, {
-      data: isWinner,
-    }).afterClosed().subscribe(() => this.setGame(null));
+  private endGame = ({ isDraw, winner }: IEndGame): void => {
+    const isWinner: IIsWinner = {
+      isWinner: winner === this.name,
+      isDraw,
+    };
+    this.dialogService.open(EndGameComponent, { data: isWinner })
+      .afterClosed().subscribe(() => this.setGame(null));
   };
 
   private initializeNickAlreadyUsedHandler(): void {
@@ -173,15 +217,4 @@ export class AppComponent implements OnInit {
     this.hosts = hosts.hosts;
     this.allTags = this.getAllTags();
   };
-
-  private get markValue(): string {
-    return this.game.hostPlayer === this.nameControl.value
-      ? 'x'
-      : 'o';
-  }
-
-  move(rowIndex: number, cellIndex: number): void {
-    const move: IMove = { x: cellIndex, y: rowIndex, value: this.markValue };
-    this.socket.emit(CLIENT_EVENTS.MOVE, move);
-  }
 }

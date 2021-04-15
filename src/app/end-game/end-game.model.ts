@@ -1,3 +1,4 @@
 export interface IIsWinner {
-  isWinner: boolean
+  isWinner: boolean;
+  isDraw: boolean;
 }

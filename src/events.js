@@ -10,6 +10,7 @@ module.exports = {
     WIN: 'win',
     UPDATE_HOSTS: 'update hosts',
     GAME_UPDATE: 'game update',
+    ANOTHER_LEAVE_GAME: 'another leave game',
   },
   ERRORS: {
     INVALID_USERNAME: 'invalid username',
